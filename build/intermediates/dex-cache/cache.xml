@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/weijianfeng/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.2.4/a60a5e993c98c864010053cb901b7eab25306568/gson-2.2.4.jar"
+        jumboMode="false"
+        revision="23.0.3"
+        sha1="a60a5e993c98c864010053cb901b7eab25306568">
+        <dex dex="/Users/weijianfeng/RxWeiboSpace/app/build/intermediates/pre-dexed/debug/gson-2.2.4_4bb97d06fa2b3692fd5e27b99f746f55587c153c.jar" />
+    </item>
+
+</items>
