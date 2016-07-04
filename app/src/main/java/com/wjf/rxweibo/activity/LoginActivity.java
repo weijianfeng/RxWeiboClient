@@ -3,11 +3,19 @@ package com.wjf.rxweibo.activity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.wjf.rxweibo.R;
+import com.wjf.rxweibo.model.AccessToken;
+import com.wjf.rxweibo.request.ApiFactory;
 import com.wjf.rxweibo.request.ApiUrl;
+import com.wjf.rxweibo.request.api.OauthApi;
+
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * 简单的完成新浪微博登录流程
@@ -17,7 +25,6 @@ import com.wjf.rxweibo.request.ApiUrl;
  */
 public class LoginActivity extends AppCompatActivity {
 
-    //@Bind(R.id.login_web)
     private WebView mWebView;
 
     @Override
@@ -27,7 +34,7 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
 
         //请求用户授权Token
-        mWebView.loadUrl(ApiUrl.AUTH_URL);
+        mWebView.loadUrl(ApiUrl.OAUTH_URL);
     }
 
     private void initViews() {
@@ -45,7 +52,25 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void getAccessToken(String code) {
+        ApiFactory.createOauthApi(OauthApi.class).getAccessToken(code)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<AccessToken>() {
+                    @Override
+                    public void onCompleted() {
 
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(AccessToken accessToken) {
+                        //do something.
+                    }
+                });
     }
 
 }
