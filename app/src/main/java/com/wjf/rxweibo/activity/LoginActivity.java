@@ -1,5 +1,6 @@
 package com.wjf.rxweibo.activity;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -69,6 +70,9 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onNext(AccessToken accessToken) {
                         //do something.
+                        Intent intent = new Intent();
+                        intent.setClass(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
                     }
                 });
     }

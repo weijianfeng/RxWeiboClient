@@ -1,10 +1,26 @@
 package com.wjf.rxweibo.activity;
 
-/**
- * 进场动画，后续会是否鉴权，进行跳转
- *
- * @author weijianfeng
- * @date 16/7/3
- */
-public class WelcomeActivity {
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+
+import com.wjf.rxweibo.cache.AccessTokenCache;
+
+public class WelcomeActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //setContentView(R.layout.activity_welcome);
+
+        if (AccessTokenCache.getAccessToken() == null) {
+            Intent intent = new Intent();
+            intent.setClass(this, LoginActivity.class);
+            startActivity(intent);
+        } else {
+            Intent intent = new Intent();
+            intent.setClass(this, MainActivity.class);
+            startActivity(intent);
+        }
+    }
 }
