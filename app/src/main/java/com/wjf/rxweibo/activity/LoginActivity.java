@@ -9,13 +9,21 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.wjf.rxweibo.R;
+import com.wjf.rxweibo.cache.AccessTokenCache;
 import com.wjf.rxweibo.model.AccessToken;
+import com.wjf.rxweibo.model.User;
 import com.wjf.rxweibo.request.ApiFactory;
 import com.wjf.rxweibo.request.ApiUrl;
 import com.wjf.rxweibo.request.api.OauthApi;
+import com.wjf.rxweibo.request.api.UserApi;
+import com.wjf.rxweibo.request.api.WeiboApi;
 
+import rx.Observable;
+import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -53,10 +61,19 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void getAccessToken(String code) {
+
         ApiFactory.createOauthApi(OauthApi.class).getAccessToken(code)
+                .flatMap(new Func1<AccessToken, Observable<User>>() {
+
+                    @Override
+                    public Observable<User> call(AccessToken accessToken) {
+                        return ApiFactory.createWeiboApi(UserApi.class)
+                                .getUserInfo(accessToken.token,accessToken.uid);
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<AccessToken>() {
+                .subscribe(new Observer<User>() {
                     @Override
                     public void onCompleted() {
 
@@ -64,17 +81,37 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(Throwable e) {
-
                     }
 
                     @Override
-                    public void onNext(AccessToken accessToken) {
-                        //do something.
-                        Intent intent = new Intent();
-                        intent.setClass(LoginActivity.this, MainActivity.class);
-                        startActivity(intent);
+                    public void onNext(User user) {
                     }
                 });
     }
+
+//    private void getAccessToken(String code) {
+//
+//        ApiFactory.createOauthApi(OauthApi.class).getAccessToken(code)
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Observer<AccessToken>() {
+//
+//                    @Override
+//                    public void onCompleted() {
+//
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable e) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onNext(AccessToken accessToken) {
+//                        getUser(accessToken);
+//                    }
+//                });
+//
+//    }
 
 }

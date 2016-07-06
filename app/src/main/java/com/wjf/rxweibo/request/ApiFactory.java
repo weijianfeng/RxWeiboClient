@@ -1,6 +1,16 @@
 package com.wjf.rxweibo.request;
 
+import android.util.Log;
+
+import com.wjf.rxweibo.cache.AccessTokenCache;
+
+import java.io.IOException;
+
+import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -28,7 +38,16 @@ public class ApiFactory {
     }
 
     public static <T> T createWeiboApi(Class<T> clazz) {
-        // 省略
-        return createWeiboApi(clazz);
+
+        OkHttpClient client = new OkHttpClient();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .client(client)
+                .baseUrl(ApiUrl.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+
+        return retrofit.create(clazz);
     }
 }

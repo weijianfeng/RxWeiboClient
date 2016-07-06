@@ -26,6 +26,7 @@ public class AccessToken {
     @Expose
     @SerializedName("access_token")
     public String token;//用于调用access_token，接口获取授权后的access token
+
     @Expose
     @SerializedName("expires_in")
     public long expiresIn;//access_token的生命周期，单位是秒数
