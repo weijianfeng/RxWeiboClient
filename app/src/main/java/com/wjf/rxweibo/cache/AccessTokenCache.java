@@ -1,5 +1,6 @@
 package com.wjf.rxweibo.cache;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.text.format.DateUtils;
@@ -17,18 +18,19 @@ import com.wjf.rxweibo.model.AccessToken;
 public class AccessTokenCache {
 
     private static final String TAG = AccessTokenCache.class.getSimpleName();
-    private static SharedPreferences mPreferences;
     private static AccessToken mAccessToken;
+
+    private static final String PREFERENCES_NAME = "oauth";
     private static final String UID = "uid";
     private static final String EXPIRES_IN = "expires_in";
     private static final String ACCESS_TOKEN = "access_token";
 
     public static AccessToken getAccessToken() {
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
         if (mAccessToken == null) {
-            long uid = mPreferences.getLong(UID, 0L);
-            long expiresIn = mPreferences.getLong(EXPIRES_IN, 0L);
-            String accessToken = mPreferences.getString(ACCESS_TOKEN, null);
+            long uid = sharedPreferences.getLong(UID, 0L);
+            long expiresIn = sharedPreferences.getLong(EXPIRES_IN, 0L);
+            String accessToken = sharedPreferences.getString(ACCESS_TOKEN, null);
             // 当且仅当三项都完备的时候我们才会初始化授权信息对象！
             if (uid != 0L && expiresIn != 0L && accessToken != null) {
                 mAccessToken = new AccessToken(uid, accessToken, expiresIn);
@@ -38,8 +40,8 @@ public class AccessTokenCache {
     }
 
     public static void saveAccessToken(AccessToken accessToken) {
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
-        mPreferences.edit()
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
+        sharedPreferences.edit()
                 .putLong(UID, accessToken.uid)
                 .putString(ACCESS_TOKEN, accessToken.token)
                 .putLong(EXPIRES_IN, accessToken.expiresIn * 1000 + System.currentTimeMillis())
@@ -66,8 +68,8 @@ public class AccessTokenCache {
     //注销
     public static void invalidateAccessToken() {
         Log.d(TAG, "invalidate access token...");
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
-        mPreferences.edit()
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(RxWeiboApplication.getAppContext());
+        sharedPreferences.edit()
                 .remove(UID)
                 .remove(EXPIRES_IN)
                 .remove(ACCESS_TOKEN)

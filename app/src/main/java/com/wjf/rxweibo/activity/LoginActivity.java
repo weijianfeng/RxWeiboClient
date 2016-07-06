@@ -16,7 +16,6 @@ import com.wjf.rxweibo.request.ApiFactory;
 import com.wjf.rxweibo.request.ApiUrl;
 import com.wjf.rxweibo.request.api.OauthApi;
 import com.wjf.rxweibo.request.api.UserApi;
-import com.wjf.rxweibo.request.api.WeiboApi;
 
 import rx.Observable;
 import rx.Observer;
@@ -33,6 +32,8 @@ import rx.schedulers.Schedulers;
  * @date 16/7/3
  */
 public class LoginActivity extends AppCompatActivity {
+
+    private static final String TAG = LoginActivity.class.getSimpleName();
 
     private WebView mWebView;
 
@@ -67,8 +68,9 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public Observable<User> call(AccessToken accessToken) {
+                        AccessTokenCache.saveAccessToken(accessToken);
                         return ApiFactory.createWeiboApi(UserApi.class)
-                                .getUserInfo(accessToken.token,accessToken.uid);
+                                .getUserInfo(accessToken.uid);
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -85,6 +87,7 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void onNext(User user) {
+                        Log.i(TAG, "USER " + user.name);
                     }
                 });
     }
@@ -108,7 +111,7 @@ public class LoginActivity extends AppCompatActivity {
 //
 //                    @Override
 //                    public void onNext(AccessToken accessToken) {
-//                        getUser(accessToken);
+//                        AccessTokenCache.saveAccessToken(LoginActivity.this,accessToken);
 //                    }
 //                });
 //

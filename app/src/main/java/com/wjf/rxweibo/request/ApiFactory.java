@@ -1,7 +1,5 @@
 package com.wjf.rxweibo.request;
 
-import android.util.Log;
-
 import com.wjf.rxweibo.cache.AccessTokenCache;
 
 import java.io.IOException;
@@ -39,7 +37,20 @@ public class ApiFactory {
 
     public static <T> T createWeiboApi(Class<T> clazz) {
 
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(new Interceptor() {
+                    @Override
+                    public Response intercept(Chain chain) throws IOException {
+                        Request request = chain.request();
+                        HttpUrl url = request.url().newBuilder()
+                                .addQueryParameter("access_token",
+                                        AccessTokenCache.getAccessToken().token)
+                                .build();
+                        request = request.newBuilder().url(url).build();
+                        return chain.proceed(request);
+                    }
+                })
+                .build();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .client(client)

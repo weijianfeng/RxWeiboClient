@@ -15,5 +15,5 @@ import rx.Observable;
  */
 public interface UserApi {
     @GET("users/show.json")
-    Observable<User> getUserInfo(@Query("access_token") String token, @Query("uid") long uid);
+    Observable<User> getUserInfo(@Query("uid") long uid);
 }

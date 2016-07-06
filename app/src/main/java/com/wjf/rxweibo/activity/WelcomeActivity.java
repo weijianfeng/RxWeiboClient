@@ -13,14 +13,5 @@ public class WelcomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         //setContentView(R.layout.activity_welcome);
 
-        if (AccessTokenCache.getAccessToken() == null) {
-            Intent intent = new Intent();
-            intent.setClass(this, LoginActivity.class);
-            startActivity(intent);
-        } else {
-            Intent intent = new Intent();
-            intent.setClass(this, MainActivity.class);
-            startActivity(intent);
-        }
     }
 }

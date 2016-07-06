@@ -1,6 +1,7 @@
 package com.wjf.rxweibo;
 
 import android.app.Application;
+import android.content.Context;
 
 /**
  * description
@@ -10,7 +11,7 @@ import android.app.Application;
  */
 public class RxWeiboApplication extends Application {
 
-    private static RxWeiboApplication appContext;
+    private static Context appContext;
 
     @Override
     public void onCreate() {
@@ -18,7 +19,7 @@ public class RxWeiboApplication extends Application {
         appContext = this;
     }
 
-    public static RxWeiboApplication getAppContext() {
+    public static Context getAppContext() {
         return appContext;
     }
 }
