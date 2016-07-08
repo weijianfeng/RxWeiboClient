@@ -88,6 +88,9 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onNext(User user) {
                         Log.i(TAG, "USER " + user.name);
+                        Intent intent = new Intent();
+                        intent.setClass(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
                     }
                 });
     }
