@@ -34,13 +34,13 @@ import android.text.TextUtils;
 public class StatusList {
     
     /** 微博列表 */
-    public ArrayList<Status> statusList;
-    public Status statuses;
+    public ArrayList<Status> statuses;
+    //public Status statuses;
     public boolean hasvisible;
     public String previous_cursor;
     public String next_cursor;
     public int total_number;
-    public Object[] advertises;
+    //public Object[] advertises;
     
     public static StatusList parse(String jsonString) {
         if (TextUtils.isEmpty(jsonString)) {
@@ -58,9 +58,9 @@ public class StatusList {
             JSONArray jsonArray      = jsonObject.optJSONArray("statuses");
             if (jsonArray != null && jsonArray.length() > 0) {
                 int length = jsonArray.length();
-                statuses.statusList = new ArrayList<Status>(length);
+                statuses.statuses = new ArrayList<Status>(length);
                 for (int ix = 0; ix < length; ix++) {
-                    statuses.statusList.add(Status.parse(jsonArray.getJSONObject(ix)));
+                    statuses.statuses.add(Status.parse(jsonArray.getJSONObject(ix)));
                 }
             }
         } catch (JSONException e) {

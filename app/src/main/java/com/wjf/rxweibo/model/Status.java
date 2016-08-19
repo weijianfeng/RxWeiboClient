@@ -79,7 +79,7 @@ public class Status {
      */
     public Visible visible;
     /** 微博配图地址。多图时返回多图链接。无配图返回"[]" */
-    public ArrayList<String> pic_urls;
+    public ArrayList<String> pic_ids;
     /** 微博流内的推广微博ID */
     //public Ad ad;
     
@@ -126,15 +126,15 @@ public class Status {
         status.mlevel           = jsonObject.optInt("mlevel", -1);    // Have NOT supported
         status.visible          = Visible.parse(jsonObject.optJSONObject("visible"));
         
-        JSONArray picUrlsArray = jsonObject.optJSONArray("pic_urls");
+        JSONArray picUrlsArray = jsonObject.optJSONArray("pic_ids");
         if (picUrlsArray != null && picUrlsArray.length() > 0) {
             int length = picUrlsArray.length();
-            status.pic_urls = new ArrayList<String>(length);
+            status.pic_ids = new ArrayList<String>(length);
             JSONObject tmpObject = null;
             for (int ix = 0; ix < length; ix++) {
                 tmpObject = picUrlsArray.optJSONObject(ix);
                 if (tmpObject != null) {
-                    status.pic_urls.add(tmpObject.optString("thumbnail_pic"));
+                    status.pic_ids.add(tmpObject.optString("thumbnail_pic"));
                 }
             }
         }
