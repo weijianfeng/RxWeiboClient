@@ -1,6 +1,5 @@
 package com.wjf.rxweibo.fragment;
 
-
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -10,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.marshalchen.ultimaterecyclerview.UltimateRecyclerView;
 import com.wjf.rxweibo.R;
 import com.wjf.rxweibo.adapter.WeiboAdapter;
 import com.wjf.rxweibo.model.Status;
@@ -19,6 +19,7 @@ import com.wjf.rxweibo.request.api.WeiboApi;
 import com.youzan.titan.TitanRecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
@@ -38,6 +39,7 @@ public class TimelineFragment extends Fragment {
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private WeiboAdapter mAdapter;
     private List<Status> mData;
+    private boolean mIsFirstLoad = true;
 
     public TimelineFragment() {
         // Required empty public constructor
@@ -71,7 +73,23 @@ public class TimelineFragment extends Fragment {
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                loadData();
+                if (mIsFirstLoad) {
+                    loadData();
+                } else {
+                    refresh();
+                }
+
+            }
+        });
+
+        mTitanRecyclerView.setOnLoadMoreListener(new TitanRecyclerView.OnLoadMoreListener() {
+            @Override
+            public void onLoadMore() {
+                if (mAdapter.getData() == null) {
+                    loadMore();
+                } else {
+                    mTitanRecyclerView.setHasMore(false);
+                }
             }
         });
     }
@@ -80,11 +98,44 @@ public class TimelineFragment extends Fragment {
         getWeiboOnLine();
     }
 
-    private void getWeiboOnLine() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,20)
+    private void loadMore() {
+        long maxid = Long.parseLong(mAdapter.getData().get(mAdapter.getItemCount()).id);
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,maxid,5)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
+                        //Collections.reverse(statusList.statuses);
+                        return Observable.from(statusList.statuses);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Status>() {
+                    @Override
+                    public void onCompleted() {
+                        mAdapter.notifyDataSetChanged();
+                        mTitanRecyclerView.setHasMore(false);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        mTitanRecyclerView.setHasMore(false);
+                    }
+
+                    @Override
+                    public void onNext(Status status) {
+                        mData.add(status);
+                    }
+                });
+    }
+
+    private void refresh() {
+        long since_id = Long.parseLong(mAdapter.getData().get(0).id);
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(since_id,0,5)
+                .flatMap(new Func1<StatusList, Observable<Status>>() {
+                    @Override
+                    public Observable<Status> call(StatusList statusList) {
+                        Collections.reverse(statusList.statuses);
                         return Observable.from(statusList.statuses);
                     }
                 })
@@ -104,6 +155,38 @@ public class TimelineFragment extends Fragment {
 
                     @Override
                     public void onNext(Status status) {
+                        mData.add(0,status);
+                    }
+                });
+    }
+
+
+    private void getWeiboOnLine() {
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,5)
+                .flatMap(new Func1<StatusList, Observable<Status>>() {
+                    @Override
+                    public Observable<Status> call(StatusList statusList) {
+                        return Observable.from(statusList.statuses);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Status>() {
+                    @Override
+                    public void onCompleted() {
+                        mAdapter.notifyDataSetChanged();
+                        mSwipeRefreshLayout.setRefreshing(false);
+                        mIsFirstLoad = false;
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        mSwipeRefreshLayout.setRefreshing(false);
+                        mIsFirstLoad = false;
+                    }
+
+                    @Override
+                    public void onNext(Status status) {
                         mData.add(status);
                     }
                 });
@@ -111,7 +194,7 @@ public class TimelineFragment extends Fragment {
     }
 
     private void getWeiboOnLineByMap() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,20)
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,5)
                 .map(new Func1<StatusList, ArrayList<Status>>() {
                     @Override
                     public ArrayList<Status> call(StatusList statusList) {
