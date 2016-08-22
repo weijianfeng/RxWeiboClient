@@ -1,22 +1,19 @@
 package com.wjf.rxweibo.fragment;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.LinearLayoutManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.marshalchen.ultimaterecyclerview.UltimateRecyclerView;
 import com.wjf.rxweibo.R;
 import com.wjf.rxweibo.adapter.WeiboAdapter;
 import com.wjf.rxweibo.model.Status;
 import com.wjf.rxweibo.model.StatusList;
 import com.wjf.rxweibo.request.ApiFactory;
 import com.wjf.rxweibo.request.api.WeiboApi;
-import com.youzan.titan.TitanRecyclerView;
+import com.wuxiaolong.pullloadmorerecyclerview.PullLoadMoreRecyclerView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +32,9 @@ import rx.schedulers.Schedulers;
  */
 public class TimelineFragment extends Fragment {
 
-    private TitanRecyclerView mTitanRecyclerView;
-    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private static final int TIMELINE_ONCE_COUNT = 10;
+
+    private PullLoadMoreRecyclerView mPullLoadMoreRecyclerView;
     private WeiboAdapter mAdapter;
     private List<Status> mData;
     private boolean mIsFirstLoad = true;
@@ -50,8 +48,7 @@ public class TimelineFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView =  inflater.inflate(R.layout.fragment_timeline, container, false);
-        mTitanRecyclerView = (TitanRecyclerView) rootView.findViewById(R.id.titan_recycler_view);
-        mSwipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipelayout);
+        mPullLoadMoreRecyclerView = (PullLoadMoreRecyclerView)rootView.findViewById(R.id.pullloadmore_recycler_view);
         return rootView;
     }
 
@@ -64,13 +61,13 @@ public class TimelineFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mTitanRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        mAdapter = new WeiboAdapter();
-        mData = new ArrayList<>();
-        mAdapter.setData(mData);
-        mTitanRecyclerView.setAdapter(mAdapter);
+        mPullLoadMoreRecyclerView.setLinearLayout();
+        mData = new ArrayList<Status>();
+        mAdapter = new WeiboAdapter(mData);
 
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        mPullLoadMoreRecyclerView.setAdapter(mAdapter);
+
+        mPullLoadMoreRecyclerView.setOnPullLoadMoreListener(new PullLoadMoreRecyclerView.PullLoadMoreListener() {
             @Override
             public void onRefresh() {
                 if (mIsFirstLoad) {
@@ -78,18 +75,19 @@ public class TimelineFragment extends Fragment {
                 } else {
                     refresh();
                 }
-
             }
-        });
 
-        mTitanRecyclerView.setOnLoadMoreListener(new TitanRecyclerView.OnLoadMoreListener() {
             @Override
             public void onLoadMore() {
-                if (mAdapter.getData() == null) {
-                    loadMore();
-                } else {
-                    mTitanRecyclerView.setHasMore(false);
+                if (mAdapter.getItemCount() == 0) {
+                    return;
                 }
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadmore();
+                    }
+                }, 300);
             }
         });
     }
@@ -98,13 +96,14 @@ public class TimelineFragment extends Fragment {
         getWeiboOnLine();
     }
 
-    private void loadMore() {
-        long maxid = Long.parseLong(mAdapter.getData().get(mAdapter.getItemCount()).id);
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,maxid,5)
+    private void loadmore() {
+        long maxid = Long.parseLong(mData.get(mData.size() - 1).id);
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,maxid,TIMELINE_ONCE_COUNT + 1)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
                         //Collections.reverse(statusList.statuses);
+                        statusList.statuses.remove(0);
                         return Observable.from(statusList.statuses);
                     }
                 })
@@ -114,12 +113,13 @@ public class TimelineFragment extends Fragment {
                     @Override
                     public void onCompleted() {
                         mAdapter.notifyDataSetChanged();
-                        mTitanRecyclerView.setHasMore(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
+                        mPullLoadMoreRecyclerView.getRecyclerView().smoothScrollToPosition(mData.size() - TIMELINE_ONCE_COUNT);
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mTitanRecyclerView.setHasMore(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                     }
 
                     @Override
@@ -130,8 +130,8 @@ public class TimelineFragment extends Fragment {
     }
 
     private void refresh() {
-        long since_id = Long.parseLong(mAdapter.getData().get(0).id);
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(since_id,0,5)
+        long since_id = Long.parseLong(mData.get(0).id);
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(since_id,0,TIMELINE_ONCE_COUNT)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
@@ -145,12 +145,12 @@ public class TimelineFragment extends Fragment {
                     @Override
                     public void onCompleted() {
                         mAdapter.notifyDataSetChanged();
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                     }
 
                     @Override
@@ -162,7 +162,7 @@ public class TimelineFragment extends Fragment {
 
 
     private void getWeiboOnLine() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,5)
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,TIMELINE_ONCE_COUNT)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
@@ -175,13 +175,13 @@ public class TimelineFragment extends Fragment {
                     @Override
                     public void onCompleted() {
                         mAdapter.notifyDataSetChanged();
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                         mIsFirstLoad = false;
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                         mIsFirstLoad = false;
                     }
 
@@ -194,7 +194,7 @@ public class TimelineFragment extends Fragment {
     }
 
     private void getWeiboOnLineByMap() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,5)
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,TIMELINE_ONCE_COUNT)
                 .map(new Func1<StatusList, ArrayList<Status>>() {
                     @Override
                     public ArrayList<Status> call(StatusList statusList) {
@@ -207,12 +207,12 @@ public class TimelineFragment extends Fragment {
                     @Override
                     public void onCompleted() {
                         mAdapter.notifyDataSetChanged();
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mSwipeRefreshLayout.setRefreshing(false);
+                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
                     }
 
                     @Override

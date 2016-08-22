@@ -36,4 +36,5 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
     compile 'com.youzan:titan:0.1.1'
     compile 'com.marshalchen.ultimaterecyclerview:library:0.7.0'
+    compile 'com.wuxiaolong.pullloadmorerecyclerview:library:1.0.9'
 }

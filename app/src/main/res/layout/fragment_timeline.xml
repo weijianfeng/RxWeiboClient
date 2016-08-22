@@ -4,18 +4,13 @@
              android:layout_height="match_parent"
              tools:context="com.wjf.rxweibo.fragment.TimelineFragment">
 
-    <android.support.v4.widget.SwipeRefreshLayout
-        android:id="@+id/swipelayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    <!-- TODO: Update blank fragment layout -->
-        <com.youzan.titan.TitanRecyclerView
+        <com.wuxiaolong.pullloadmorerecyclerview.PullLoadMoreRecyclerView
             xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/titan_recycler_view"
+            android:id="@+id/pullloadmore_recycler_view"
+            android:scrollbars="vertical"
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true"/>
-    </android.support.v4.widget.SwipeRefreshLayout>
 
 </FrameLayout>

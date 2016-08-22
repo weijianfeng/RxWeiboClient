@@ -16,5 +16,5 @@ import rx.Observable;
 public interface WeiboApi {
     @GET("statuses/friends_timeline.json")
     Observable<StatusList> getTimeLine(@Query("since_id") long since_id, @Query("max_id") long max_id,
-                                       @Query("count") long count);
+                                       @Query("count") int count);
 }
