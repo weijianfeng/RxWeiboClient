@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.wjf.rxweibo.R;
 import com.wjf.rxweibo.adapter.WeiboAdapter;
+import com.wjf.rxweibo.database.dao.StatusDao;
 import com.wjf.rxweibo.model.Status;
 import com.wjf.rxweibo.model.StatusList;
 import com.wjf.rxweibo.request.ApiFactory;
@@ -38,6 +39,8 @@ public class TimelineFragment extends Fragment {
     private WeiboAdapter mAdapter;
     private List<Status> mData;
     private boolean mIsFirstLoad = true;
+    private StatusDao mStatusDao;
+
 
     public TimelineFragment() {
         // Required empty public constructor
@@ -56,6 +59,7 @@ public class TimelineFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        loadData();
+        mStatusDao = new StatusDao(getActivity().getApplication());
     }
 
     @Override
@@ -135,6 +139,7 @@ public class TimelineFragment extends Fragment {
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
+                        mStatusDao.saveStatuses(statusList.statuses);
                         Collections.reverse(statusList.statuses);
                         return Observable.from(statusList.statuses);
                     }
@@ -166,6 +171,7 @@ public class TimelineFragment extends Fragment {
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
+                        mStatusDao.saveStatuses(statusList.statuses);
                         return Observable.from(statusList.statuses);
                     }
                 })
