@@ -76,7 +76,7 @@ public class StatusDao extends BaseDao{
     public List<Status> getStatusByLastId(String lastId, int limit) {
         List<Status> statuses = new ArrayList<>();
         Cursor cursor = query(DBContract.Status.TABLE_NAME, null, DBContract.Status.COLUMN_NAME_ID + "< ?",
-                new String[]{String.valueOf(lastId)}, null, null, null, String.valueOf(limit));
+                new String[]{String.valueOf(lastId)}, null, null, DBContract.Status.COLUMN_NAME_ID + " DESC", String.valueOf(limit));
         if(cursor != null){
             try {
                 while(cursor.moveToNext()){

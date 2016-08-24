@@ -33,7 +33,7 @@ import rx.schedulers.Schedulers;
  */
 public class TimelineFragment extends Fragment {
 
-    private static final int TIMELINE_ONCE_COUNT = 10;
+    private static final int TIMELINE_ONCE_COUNT = 5;
 
     private PullLoadMoreRecyclerView mPullLoadMoreRecyclerView;
     private WeiboAdapter mAdapter;
@@ -95,18 +95,34 @@ public class TimelineFragment extends Fragment {
             }
         });
 
-        List<Status> statusList = mStatusDao.getStatus("0", TIMELINE_ONCE_COUNT);
-        if (statusList != null) {
-            mData.addAll(statusList);
-            mAdapter.notifyDataSetChanged();
-        }
+
     }
 
     private void loadData() {
-        getWeiboOnLine();
+        List<Status> statusList = mStatusDao.getStatus("0", TIMELINE_ONCE_COUNT);
+        if (statusList == null || statusList.size() == 0) {
+            getWeiboOnLine();
+        } else {
+            mData.addAll(statusList);
+            mAdapter.notifyDataSetChanged();
+            mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
+            mIsFirstLoad = false;
+        }
     }
 
     private void loadmore() {
+        String lastId = mData.get(mData.size() - 1).id;
+        List<Status>statusList = mStatusDao.getStatus(lastId, TIMELINE_ONCE_COUNT);
+        if (statusList == null || statusList.size() == 0) {
+            loadmoreOnline();
+        } else {
+            mData.addAll(statusList);
+            mAdapter.notifyDataSetChanged();
+            mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
+        }
+    }
+
+    private void loadmoreOnline() {
         long maxid = Long.parseLong(mData.get(mData.size() - 1).id);
         ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,maxid,TIMELINE_ONCE_COUNT + 1)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
@@ -114,6 +130,7 @@ public class TimelineFragment extends Fragment {
                     public Observable<Status> call(StatusList statusList) {
                         //Collections.reverse(statusList.statuses);
                         statusList.statuses.remove(0);
+                        mStatusDao.saveStatuses(statusList.statuses);
                         return Observable.from(statusList.statuses);
                     }
                 })
