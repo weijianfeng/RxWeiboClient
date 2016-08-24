@@ -94,6 +94,12 @@ public class TimelineFragment extends Fragment {
                 }, 300);
             }
         });
+
+        List<Status> statusList = mStatusDao.getStatus("0", TIMELINE_ONCE_COUNT);
+        if (statusList != null) {
+            mData.addAll(statusList);
+            mAdapter.notifyDataSetChanged();
+        }
     }
 
     private void loadData() {

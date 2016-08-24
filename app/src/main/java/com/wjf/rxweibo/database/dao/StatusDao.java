@@ -2,6 +2,7 @@ package com.wjf.rxweibo.database.dao;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.wjf.rxweibo.database.DBContract;
@@ -43,4 +44,53 @@ public class StatusDao extends BaseDao{
         }
         batchInsert(DBContract.Status.TABLE_NAME, cvs);
     }
+
+    public List<Status> getStatus(String lastId, int limit) {
+        if (lastId.equals("0")) {
+            return getLatestStatus(limit);
+        } else {
+            return getStatusByLastId(lastId, limit);
+        }
+    }
+
+    public List<Status> getLatestStatus(int limit) {
+        List<Status> statuses = new ArrayList<>();
+        Cursor cursor = query(DBContract.Status.TABLE_NAME, null, null,
+                null, null, null,DBContract.Status.COLUMN_NAME_ID + " DESC", String.valueOf(limit));
+        if(cursor != null){
+            try {
+                while(cursor.moveToNext()){
+                    Status status = new Status();
+                    status.id = getString(cursor, DBContract.Status.COLUMN_NAME_ID);
+                    status.text = getString(cursor, DBContract.Status.COLUMN_NAME_STATUS_TEXT);
+                    statuses.add(status);
+                }
+            }finally {
+                cursor.close();
+            }
+        }
+        return statuses;
+    }
+
+
+    public List<Status> getStatusByLastId(String lastId, int limit) {
+        List<Status> statuses = new ArrayList<>();
+        Cursor cursor = query(DBContract.Status.TABLE_NAME, null, DBContract.Status.COLUMN_NAME_ID + "< ?",
+                new String[]{String.valueOf(lastId)}, null, null, null, String.valueOf(limit));
+        if(cursor != null){
+            try {
+                while(cursor.moveToNext()){
+                    Status status = new Status();
+                    status.id = getString(cursor, DBContract.Status.COLUMN_NAME_ID);
+                    status.text = getString(cursor, DBContract.Status.COLUMN_NAME_STATUS_TEXT);
+                    statuses.add(status);
+                }
+            }finally {
+                cursor.close();
+            }
+        }
+        return statuses;
+    }
+
+
 }
