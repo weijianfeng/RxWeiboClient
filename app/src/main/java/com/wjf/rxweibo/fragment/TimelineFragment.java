@@ -23,9 +23,11 @@ import java.util.List;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.observables.AsyncOnSubscribe;
 import rx.schedulers.Schedulers;
 
 /**
@@ -158,7 +160,7 @@ public class TimelineFragment extends Fragment {
 
     private void refresh() {
         long since_id = Long.parseLong(mData.get(0).id);
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(since_id,0,TIMELINE_ONCE_COUNT)
+        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(since_id, 0, TIMELINE_ONCE_COUNT)
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
@@ -183,7 +185,7 @@ public class TimelineFragment extends Fragment {
 
                     @Override
                     public void onNext(Status status) {
-                        mData.add(0,status);
+                        mData.add(0, status);
                     }
                 });
     }
@@ -251,5 +253,27 @@ public class TimelineFragment extends Fragment {
                         }
                     }
                 });
+    }
+
+    public Observable saveStatus(final List<Status> statusList) {
+        return Observable.create(new Observable.OnSubscribe<Object>() {
+            @Override
+            public void call(Subscriber<? super Object> subscriber) {
+                mStatusDao.saveStatuses(statusList);
+                subscriber.onNext(null);
+                subscriber.onCompleted();
+            }
+
+        }).subscribeOn(Schedulers.io());
+    }
+
+    public Observable getStatus(final String lastId, final int limit) {
+        return Observable.create(new Observable.OnSubscribe<List<Status>>() {
+            @Override
+            public void call(Subscriber<? super List<Status>> subscriber) {
+                subscriber.onNext(mStatusDao.getStatus(lastId, limit));
+                subscriber.onCompleted();
+            }
+        }).subscribeOn(Schedulers.io());
     }
 }
