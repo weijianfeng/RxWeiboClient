@@ -1,11 +1,17 @@
 package com.wjf.rxweibo.fragment;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.wjf.rxweibo.R;
 import com.wjf.rxweibo.adapter.WeiboAdapter;
@@ -15,6 +21,8 @@ import com.wjf.rxweibo.model.StatusList;
 import com.wjf.rxweibo.request.ApiFactory;
 import com.wjf.rxweibo.request.api.WeiboApi;
 import com.wuxiaolong.pullloadmorerecyclerview.PullLoadMoreRecyclerView;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +46,7 @@ public class TimelineFragment extends Fragment {
     private static final int TIMELINE_ONCE_COUNT = 10;
 
     private PullLoadMoreRecyclerView mPullLoadMoreRecyclerView;
+    private Toolbar mToolbar;
     private WeiboAdapter mAdapter;
     private List<Status> mData;
     private boolean mIsFirstLoad = true;
@@ -54,6 +63,7 @@ public class TimelineFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView =  inflater.inflate(R.layout.fragment_timeline, container, false);
         mPullLoadMoreRecyclerView = (PullLoadMoreRecyclerView)rootView.findViewById(R.id.pullloadmore_recycler_view);
+        mToolbar = (Toolbar)getActivity().findViewById(R.id.toolbar);
         return rootView;
     }
 
@@ -96,6 +106,15 @@ public class TimelineFragment extends Fragment {
                         loadmoreData();
                     }
                 }, 300);
+            }
+        });
+
+        mToolbar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mAdapter.getItemCount() != 0) {
+                    mPullLoadMoreRecyclerView.scrollToTop();
+                }
             }
         });
 
