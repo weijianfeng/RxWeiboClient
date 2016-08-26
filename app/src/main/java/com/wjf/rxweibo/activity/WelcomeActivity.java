@@ -15,9 +15,11 @@ public class WelcomeActivity extends AppCompatActivity {
         if (AccessTokenCache.getAccessToken() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
+            finish();
         } else {
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
+            finish();
         }
     }
 }

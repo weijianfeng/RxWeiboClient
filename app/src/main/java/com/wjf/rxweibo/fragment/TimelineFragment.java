@@ -77,7 +77,8 @@ public class TimelineFragment extends Fragment {
             @Override
             public void onRefresh() {
                 if (mIsFirstLoad) {
-                    loadData();
+                    //loadData();
+                    initData();
                 } else {
                     refresh();
                 }
@@ -91,7 +92,8 @@ public class TimelineFragment extends Fragment {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        loadmore();
+                        //loadmore();
+                        loadmoreData();
                     }
                 }, 300);
             }
@@ -100,63 +102,55 @@ public class TimelineFragment extends Fragment {
 
     }
 
-    private void loadData() {
-        List<Status> statusList = mStatusDao.getStatus("0", TIMELINE_ONCE_COUNT);
-        if (statusList == null || statusList.size() == 0) {
-            getWeiboOnLine();
-        } else {
-            mData.addAll(statusList);
-            mAdapter.notifyDataSetChanged();
-            mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-            mIsFirstLoad = false;
-        }
-    }
+    /***** 初始化数据 ******/
 
-    private void loadmore() {
-        String lastId = mData.get(mData.size() - 1).id;
-        List<Status>statusList = mStatusDao.getStatus(lastId, TIMELINE_ONCE_COUNT);
-        if (statusList == null || statusList.size() == 0) {
-            loadmoreOnline();
-        } else {
-            mData.addAll(statusList);
-            mAdapter.notifyDataSetChanged();
-            mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-        }
-    }
-
-    private void loadmoreOnline() {
-        long maxid = Long.parseLong(mData.get(mData.size() - 1).id);
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,maxid,TIMELINE_ONCE_COUNT + 1)
-                .flatMap(new Func1<StatusList, Observable<Status>>() {
+    private void initData() {
+        Observable<List<Status>> ob = Observable
+                .concat(getWeiboFromDB(),getWeiboOnline())
+                .takeFirst(new Func1<List<Status>, Boolean>() {
                     @Override
-                    public Observable<Status> call(StatusList statusList) {
-                        //Collections.reverse(statusList.statuses);
-                        statusList.statuses.remove(0);
-                        mStatusDao.saveStatuses(statusList.statuses);
-                        return Observable.from(statusList.statuses);
+                    public Boolean call(List<Status> statuses) {
+                        return !(statuses == null || statuses.size() == 0);
                     }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Status>() {
+                });
+        ob.observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<List<Status>>() {
                     @Override
                     public void onCompleted() {
-                        mAdapter.notifyDataSetChanged();
                         mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-                        mPullLoadMoreRecyclerView.getRecyclerView().smoothScrollToPosition(mData.size() - TIMELINE_ONCE_COUNT);
+                        mIsFirstLoad = false;
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
+                        mIsFirstLoad = false;
                     }
 
                     @Override
-                    public void onNext(Status status) {
-                        mData.add(status);
+                    public void onNext(List<Status> statuses) {
+                        mData.addAll(statuses);
+                        mAdapter.notifyDataSetChanged();
                     }
                 });
     }
+
+    private Observable<List<Status>> getWeiboOnline() {
+        return ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0, 0, TIMELINE_ONCE_COUNT)
+                .map(new Func1<StatusList, List<Status>>() {
+                    @Override
+                    public List<Status> call(StatusList statusList) {
+                        mStatusDao.saveStatus(statusList.statuses);
+                        return statusList.statuses;
+                    }
+                }).subscribeOn(Schedulers.io());
+    }
+
+    private Observable<List<Status>> getWeiboFromDB() {
+        return mStatusDao.getStatuses("0", TIMELINE_ONCE_COUNT);
+    }
+
+    /***** 下拉刷新数据 *****/
 
     private void refresh() {
         long since_id = Long.parseLong(mData.get(0).id);
@@ -164,7 +158,7 @@ public class TimelineFragment extends Fragment {
                 .flatMap(new Func1<StatusList, Observable<Status>>() {
                     @Override
                     public Observable<Status> call(StatusList statusList) {
-                        mStatusDao.saveStatuses(statusList.statuses);
+                        mStatusDao.saveStatus(statusList.statuses);
                         Collections.reverse(statusList.statuses);
                         return Observable.from(statusList.statuses);
                     }
@@ -190,90 +184,54 @@ public class TimelineFragment extends Fragment {
                 });
     }
 
+    /***** 上拉加载更多数据  *****/
 
-    private void getWeiboOnLine() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,TIMELINE_ONCE_COUNT)
-                .flatMap(new Func1<StatusList, Observable<Status>>() {
+    private void loadmoreData() {
+        Observable<List<Status>> ob = Observable
+                .concat(loadmoreWeiboFromDB(),loadmoreWeiboOnline())
+                .takeFirst(new Func1<List<Status>, Boolean>() {
                     @Override
-                    public Observable<Status> call(StatusList statusList) {
-                        mStatusDao.saveStatuses(statusList.statuses);
-                        return Observable.from(statusList.statuses);
+                    public Boolean call(List<Status> statuses) {
+                        return !(statuses == null || statuses.size() == 0);
                     }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Status>() {
+                });
+        ob.observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<List<Status>>() {
                     @Override
                     public void onCompleted() {
-                        mAdapter.notifyDataSetChanged();
+                        mPullLoadMoreRecyclerView.getRecyclerView().smoothScrollToPosition(mData.size() - TIMELINE_ONCE_COUNT);
                         mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-                        mIsFirstLoad = false;
                     }
 
                     @Override
                     public void onError(Throwable e) {
                         mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-                        mIsFirstLoad = false;
                     }
 
                     @Override
-                    public void onNext(Status status) {
-                        mData.add(status);
+                    public void onNext(List<Status> statuses) {
+                        mData.addAll(statuses);
+                        mAdapter.notifyDataSetChanged();
                     }
                 });
-
     }
 
-    private void getWeiboOnLineByMap() {
-        ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0,0,TIMELINE_ONCE_COUNT)
-                .map(new Func1<StatusList, ArrayList<Status>>() {
+    private Observable<List<Status>> loadmoreWeiboOnline() {
+        long maxid = Long.parseLong(mData.get(mData.size() - 1).id);
+        return ApiFactory.createWeiboApi(WeiboApi.class).getTimeLine(0, maxid, TIMELINE_ONCE_COUNT + 1)
+                .map(new Func1<StatusList, List<Status>>() {
                     @Override
-                    public ArrayList<Status> call(StatusList statusList) {
+                    public List<Status> call(StatusList statusList) {
+                        statusList.statuses.remove(0);
+                        mStatusDao.saveStatus(statusList.statuses);
                         return statusList.statuses;
                     }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<ArrayList<Status>>() {
-                    @Override
-                    public void onCompleted() {
-                        mAdapter.notifyDataSetChanged();
-                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        mPullLoadMoreRecyclerView.setPullLoadMoreCompleted();
-                    }
-
-                    @Override
-                    public void onNext(ArrayList<Status> status) {
-                        for (Status s : status) {
-                            mData.add(s);
-                        }
-                    }
-                });
+                }).subscribeOn(Schedulers.io());
     }
 
-    public Observable saveStatus(final List<Status> statusList) {
-        return Observable.create(new Observable.OnSubscribe<Object>() {
-            @Override
-            public void call(Subscriber<? super Object> subscriber) {
-                mStatusDao.saveStatuses(statusList);
-                subscriber.onNext(null);
-                subscriber.onCompleted();
-            }
-
-        }).subscribeOn(Schedulers.io());
+    private Observable<List<Status>> loadmoreWeiboFromDB() {
+        String lastId = mData.get(mData.size() - 1).id;
+        return mStatusDao.getStatuses(lastId, TIMELINE_ONCE_COUNT);
     }
 
-    public Observable getStatus(final String lastId, final int limit) {
-        return Observable.create(new Observable.OnSubscribe<List<Status>>() {
-            @Override
-            public void call(Subscriber<? super List<Status>> subscriber) {
-                subscriber.onNext(mStatusDao.getStatus(lastId, limit));
-                subscriber.onCompleted();
-            }
-        }).subscribeOn(Schedulers.io());
-    }
 }

@@ -11,6 +11,10 @@ import com.wjf.rxweibo.model.Status;
 import java.util.ArrayList;
 import java.util.List;
 
+import rx.Observable;
+import rx.Subscriber;
+import rx.schedulers.Schedulers;
+
 /**
  * description
  *
@@ -31,7 +35,7 @@ public class StatusDao extends BaseDao{
         db.execSQL(sql);
     }
 
-    public void saveStatuses(List<Status> statusList) {
+    public void saveStatus(List<Status> statusList) {
         if (statusList == null) {
             return;
         }
@@ -92,5 +96,15 @@ public class StatusDao extends BaseDao{
         return statuses;
     }
 
+    public Observable<List<Status>> getStatuses(final String lastId, final int limit) {
+        return Observable.create(new Observable.OnSubscribe<List<Status>>() {
+            @Override
+            public void call(Subscriber<? super List<Status>> subscriber) {
+                subscriber.onNext(getStatus(lastId, limit));
+                subscriber.onCompleted();
+            }
+        }).subscribeOn(Schedulers.io());
+
+    }
 
 }
