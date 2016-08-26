@@ -35,7 +35,7 @@ import rx.schedulers.Schedulers;
  */
 public class TimelineFragment extends Fragment {
 
-    private static final int TIMELINE_ONCE_COUNT = 5;
+    private static final int TIMELINE_ONCE_COUNT = 10;
 
     private PullLoadMoreRecyclerView mPullLoadMoreRecyclerView;
     private WeiboAdapter mAdapter;
@@ -99,7 +99,7 @@ public class TimelineFragment extends Fragment {
             }
         });
 
-
+        mPullLoadMoreRecyclerView.refresh();
     }
 
     /***** 初始化数据 ******/
